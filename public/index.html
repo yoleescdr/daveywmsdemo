@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>LA Project Map</title>
+    <style>
+      #map {
+        height: 100%;
+        width: 100%;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      let map;
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 34.0522, lng: -118.2437},
+          zoom: 10
+        });
+
+        let wmsLayer = new google.maps.ImageMapType({
+          getTileUrl: function(coord, zoom) {
+            var proj = map.getProjection();
+            var zfactor = Math.pow(2, zoom);
+            var top = proj.fromPointToLatLng(new google.maps.Point(coord.x * 256 / zfactor, coord.y * 256 / zfactor));
+            var bot = proj.fromPointToLatLng(new google.maps.Point((coord.x + 1) * 256 / zfactor, (coord.y + 1) * 256 / zfactor));
+            var bbox = bot.lng() + "," + bot.lat() + "," + top.lng() + "," + top.lat();
+
+            let url = 'http://localhost:3000/proxy/geoserver/LosAngelesCA_WMS/wms?' + 
+              'service=WMS' + 
+              '&version=1.3.0' +  
+              '&request=GetMap' + 
+              '&layers=Navagis_WMS' + 
+              '&bbox=' + bbox + 
+              '&width=256' +
+              '&height=256' +
+              '&crs=EPSG:4326' + 
+              '&format=image/png';
+
+            console.log("Requesting tile with URL: ", url);
+            
+            return url;
+          },
+          tileSize: new google.maps.Size(256, 256),
+          opacity: 0.6,
+          isPng: true,
+          alt: "Navagis WMS Layer",
+          name: "Navagis_WMS",
+          getTileError: function(coord, zoom) {
+            console.log('Failed to get tile! ' + coord + ', ' + zoom);
+          }
+        });
+
+        map.overlayMapTypes.push(wmsLayer);
+      }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD0MH2yDJARcXCn6PtBe2HCGj9UKpH_noA&callback=initMap"
+    async defer></script>
+  </body>
+</html>
